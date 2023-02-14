@@ -47,7 +47,7 @@ class Environment(Process):
 
     def run(self):
         super(Environment, self).run()
-        state = self.env.reset()
+        state = self.env.reset()[0]
         state = np.reshape(state, [1, self.state_size])
         self.child_conn.send(state)
         while True:
@@ -55,11 +55,11 @@ class Environment(Process):
             if self.is_render and self.env_idx == 0:
                 self.env.render()
 
-            state, reward, done, info = self.env.step(action)
+            state, reward, done, info, *_ = self.env.step(action)
             state = np.reshape(state, [1, self.state_size])
 
             if done:
-                state = self.env.reset()
+                state = self.env.reset()[0]
                 state = np.reshape(state, [1, self.state_size])
 
             self.child_conn.send([state, reward, done, info])
@@ -285,7 +285,7 @@ class PPOAgent:
         return self.average_[-1], SAVING
     
     def run(self): # train only when episode is finished
-        state = self.env.reset()
+        state = self.env.reset()[0]
         state = np.reshape(state, [1, self.state_size[0]])
         done, score, SAVING = False, 0, ''
         while True:
@@ -296,7 +296,7 @@ class PPOAgent:
                 # Actor picks an action
                 action, action_onehot, prediction = self.act(state)
                 # Retrieve new state, reward, and whether the state is terminal
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, *_ = self.env.step(action)
                 # Memorize (state, action, reward) for training
                 states.append(state)
                 next_states.append(np.reshape(next_state, [1, self.state_size[0]]))
@@ -324,7 +324,7 @@ class PPOAgent:
         self.env.close()
 
     def run_batch(self): # train every self.Training_batch episodes
-        state = self.env.reset()
+        state = self.env.reset()[0]
         state = np.reshape(state, [1, self.state_size[0]])
         done, score, SAVING = False, 0, ''
         while True:
@@ -335,7 +335,7 @@ class PPOAgent:
                 # Actor picks an action
                 action, action_onehot, prediction = self.act(state)
                 # Retrieve new state, reward, and whether the state is terminal
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, *_ = self.env.step(action)
                 # Memorize (state, action, reward) for training
                 states.append(state)
                 next_states.append(np.reshape(next_state, [1, self.state_size[0]]))
@@ -436,14 +436,14 @@ class PPOAgent:
     def test(self, test_episodes = 100):
         self.load()
         for e in range(100):
-            state = self.env.reset()
+            state = self.env.reset()[0]
             state = np.reshape(state, [1, self.state_size[0]])
             done = False
             score = 0
             while not done:
                 self.env.render()
                 action = np.argmax(self.Actor.predict(state)[0])
-                state, reward, done, _ = self.env.step(action)
+                state, reward, done, *_ = self.env.step(action)
                 state = np.reshape(state, [1, self.state_size[0]])
                 score += reward
                 if done:
@@ -454,7 +454,7 @@ class PPOAgent:
 if __name__ == "__main__":
     env_name = 'LunarLander-v2'
     agent = PPOAgent(env_name)
-    agent.run() # train as PPO, train every epesode
+    # agent.run() # train as PPO, train every epesode
     #agent.run_batch() # train as PPO, train every batch, trains better
-    #agent.run_multiprocesses(num_worker = 8)  # train PPO multiprocessed (fastest)
+    agent.run_multiprocesses(num_worker = 6)  # train PPO multiprocessed (fastest)
     #agent.test()

@@ -21,7 +21,7 @@ def Random_games():
             # this executes the environment with an action, 
             # and returns the observation of the environment, 
             # the reward, if the env is over, and other info.
-            next_state, reward, done, info = env.step(action)
+            next_state, reward, done, info, *_ = env.step(action)
             
             # lets print everything in one line:
             print(t, next_state, reward, done, info, action)

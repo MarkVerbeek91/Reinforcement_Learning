@@ -28,7 +28,7 @@ def OurModel(input_shape, action_space):
     # Output Layer with # of actions: 2 nodes (left, right)
     X = Dense(action_space, activation="linear", kernel_initializer='he_uniform')(X)
 
-    model = Model(inputs = X_input, outputs = X, name='CartPole DQN model')
+    model = Model(inputs = X_input, outputs = X, name='CartPole_DQN_model')
     model.compile(loss="mse", optimizer=RMSprop(lr=0.00025, rho=0.95, epsilon=0.01), metrics=["accuracy"])
 
     model.summary()
@@ -112,14 +112,14 @@ class DQNAgent:
             
     def run(self):
         for e in range(self.EPISODES):
-            state = self.env.reset()
+            state = self.env.reset()[0]
             state = np.reshape(state, [1, self.state_size])
             done = False
             i = 0
             while not done:
                 self.env.render()
                 action = self.act(state)
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, *_ = self.env.step(action)
                 next_state = np.reshape(next_state, [1, self.state_size])
                 if not done or i == self.env._max_episode_steps-1:
                     reward = reward
@@ -139,14 +139,14 @@ class DQNAgent:
     def test(self):
         self.load("cartpole-dqn.h5")
         for e in range(self.EPISODES):
-            state = self.env.reset()
+            state = self.env.reset()[0]
             state = np.reshape(state, [1, self.state_size])
             done = False
             i = 0
             while not done:
                 self.env.render()
                 action = np.argmax(self.model.predict(state))
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, *_ = self.env.step(action)
                 state = np.reshape(next_state, [1, self.state_size])
                 i += 1
                 if done:
@@ -155,5 +155,5 @@ class DQNAgent:
 
 if __name__ == "__main__":
     agent = DQNAgent()
-    #agent.run()
-    agent.test()
+    agent.run()
+    # agent.test()
